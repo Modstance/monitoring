@@ -1,39 +1,79 @@
-version: "3"
-
 services:
   grafana:
-    image: grafana/grafana:10.2.0
+    image: grafana/grafana:12.3.1
     container_name: grafana
+    restart: unless-stopped
     environment:
-      # - GF_LOG_LEVEL=warn
       - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_SECURITY_ADMIN_USER=${GF_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=${GF_ROOT_URL:-http://localhost:3000}
     volumes:
-      - ./grafana:/var/lib/grafana
+      - grafana_data:/var/lib/grafana
       - ./grafana-provisioning/:/etc/grafana/provisioning/
     ports:
       - "3000:3000"
+    networks:
+      - monitoring
+    depends_on:
+      - loki
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     logging:
       driver: syslog
       options:
         syslog-address: "udp://127.0.0.1:5123"
         tag: "grafana"
-      
+
   loki:
+    image: grafana/loki:3.6.3
     container_name: loki
-    image: grafana/loki:2.9.1
+    restart: unless-stopped
     command: -config.file=/conf/loki-config.yaml
     volumes:
-      - ./loki/data:/data
-      - ./loki/conf:/conf
+      - loki_data:/data
+      - ./loki/conf:/conf:ro
     ports:
       - "3100:3100"
+    networks:
+      - monitoring
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
   vector:
-    image: timberio/vector:0.33.0-debian
+    image: timberio/vector:0.52.0-debian
     container_name: vector
+    restart: unless-stopped
     volumes:
       - ./vector/vector.yaml:/etc/vector/vector.yaml:ro
     ports:
       - "127.0.0.1:5123:5123/udp"
+    networks:
+      - monitoring
+    depends_on:
+      - loki
+    healthcheck:
+      test: ["CMD-SHELL", "vector tap --quiet --duration-ms 100 || exit 0"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  grafana_data:
+  loki_data:
 
 

@@ -13,7 +13,7 @@ services:
       - grafana_data:/var/lib/grafana
       - ./grafana-provisioning/:/etc/grafana/provisioning/
     ports:
-      - "3000:3000"
+      - "3210:3000"
     networks:
       - monitoring
     depends_on:

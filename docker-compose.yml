@@ -34,6 +34,7 @@ services:
     image: grafana/loki:3.6.3
     container_name: loki
     restart: unless-stopped
+    user: "0"
     command: -config.file=/conf/loki-config.yaml
     volumes:
       - loki_data:/data

@@ -25,11 +25,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
-    logging:
-      driver: syslog
-      options:
-        syslog-address: "udp://127.0.0.1:5123"
-        tag: "grafana"
 
   loki:
     image: grafana/loki:3.6.3
@@ -59,6 +54,7 @@ services:
     volumes:
       - ./vector/vector.yaml:/etc/vector/vector.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/log/traefik:/var/log/traefik:ro
     # ports:
     #   - "127.0.0.1:5123:5123/udp"
     networks:

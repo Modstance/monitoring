@@ -11,14 +11,28 @@ sources:
     exclude_containers:
       - vector
 
+  traefik_access_log:
+    type: file
+    include:
+      - /var/log/traefik/access.log
+    read_from: beginning
+
 transforms:
   parse_docker_logs:
     type: remap
     inputs:
       - docker
     source: |
-      .container = string!(.container_name)
-      .image = string!(.container_image)
+      .container = .container_name ?? .label."com.docker.swarm.service.name" ?? "unknown"
+      .image = .image ?? "unknown"
+
+  parse_traefik_access:
+    type: remap
+    inputs:
+      - traefik_access_log
+    source: |
+      .container = "traefik"
+      .log_type = "access"
 
 sinks:
   loki_vectorlogs:
@@ -30,8 +44,6 @@ sinks:
     endpoint: 'http://loki:3100'
     labels:
       logsource: vector
-    acknowledgements:
-      enabled: true
 
   loki_docker:
     type: loki
@@ -43,6 +55,14 @@ sinks:
     labels:
       logsource: docker
       container: "{{ container }}"
-      image: "{{ image }}"
-    acknowledgements:
-      enabled: true
+
+  loki_traefik_access:
+    type: loki
+    inputs:
+      - parse_traefik_access
+    encoding:
+      codec: json
+    endpoint: 'http://loki:3100'
+    labels:
+      logsource: traefik
+      log_type: access

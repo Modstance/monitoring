@@ -12,15 +12,15 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana-provisioning/:/etc/grafana/provisioning/
-    ports:
-      - "3210:3000"
+    # ports:
+    #   - "3210:3000"
     networks:
       - monitoring
       - modstance-monitoring
     depends_on:
       - loki
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -40,13 +40,13 @@ services:
     volumes:
       - loki_data:/data
       - ./loki/conf:/conf:ro
-    ports:
-      - "3100:3100"
+    # ports:
+    #   - "3100:3100"
     networks:
       - monitoring
       - modstance-monitoring
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1"]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -58,15 +58,16 @@ services:
     restart: unless-stopped
     volumes:
       - ./vector/vector.yaml:/etc/vector/vector.yaml:ro
-    ports:
-      - "127.0.0.1:5123:5123/udp"
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # ports:
+    #   - "127.0.0.1:5123:5123/udp"
     networks:
       - monitoring
       - modstance-monitoring
     depends_on:
       - loki
     healthcheck:
-      test: ["CMD-SHELL", "vector tap --quiet --duration-ms 100 || exit 0"]
+      test: [ "CMD-SHELL", "vector tap --quiet --duration-ms 100 || exit 0" ]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -5,21 +5,20 @@ api:
 sources:
   vectorlogs:
     type: internal_logs
-    
-  dockersyslog:
-    type: syslog
-    address: '0.0.0.0:5123'
-    mode: udp
+
+  docker:
+    type: docker_logs
+    exclude_containers:
+      - vector
 
 transforms:
   parse_docker_logs:
     type: remap
     inputs:
-      - dockersyslog
+      - docker
     source: |
-      .timestamp = now()
-      .container = .appname
-      del(.appname)
+      .container = string!(.container_name)
+      .image = string!(.container_image)
 
 sinks:
   loki_vectorlogs:
@@ -34,7 +33,7 @@ sinks:
     acknowledgements:
       enabled: true
 
-  loki_dockersyslog:
+  loki_docker:
     type: loki
     inputs:
       - parse_docker_logs
@@ -44,5 +43,6 @@ sinks:
     labels:
       logsource: docker
       container: "{{ container }}"
+      image: "{{ image }}"
     acknowledgements:
       enabled: true

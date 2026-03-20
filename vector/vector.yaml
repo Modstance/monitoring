@@ -23,8 +23,14 @@ transforms:
     inputs:
       - docker
     source: |
-      .container = .container_name ?? .label."com.docker.swarm.service.name" ?? "unknown"
-      .image = .image ?? "unknown"
+      if exists(.container_name) {
+        .container = to_string(.container_name) ?? "unknown"
+      } else if exists(.label."com.docker.swarm.service.name") {
+        .container = to_string(.label."com.docker.swarm.service.name") ?? "unknown"
+      } else {
+        .container = "unknown"
+      }
+      .image = to_string(.image) ?? "unknown"
 
   parse_traefik_access:
     type: remap

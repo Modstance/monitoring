@@ -54,7 +54,6 @@ services:
     volumes:
       - ./vector/vector.yaml:/etc/vector/vector.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /var/log/traefik:/var/log/traefik:ro
     # ports:
     #   - "127.0.0.1:5123:5123/udp"
     networks:
